@@ -30,12 +30,16 @@ for i=1:length(filelisting)
     data.EVT=num(:,11);
     T=struct2table(data);
 
-    sheet=str2double (filelisting(2).name(4))
+    sheet=str2double (filelisting(i).name(4));
+    if sheet==0
+        sheet=10
+    end
+    
     sheetname= sprintf('NMS%.0f',sheet);
     titledate=strcat(data.DateTime(1),' to  ',data.DateTime(end));
     
     copyfile(template,filename);
-    writetable(T,filename,'Sheet',sheetname,'Range','A10');
+    writetable(T,filename,'Sheet',(sheetname),'Range','A10');
     xlrange='A8';
     xlswrite(filename,titledate,sheetname,xlrange);
     %% Monthly Tab
@@ -70,7 +74,7 @@ for i=1:length(filelisting)
     
     switch sheet
         
-        case 0
+        case 10
             daystart='C28';
             nightstart='C29';
         case 1
