@@ -11,13 +11,13 @@ clearvars -except rootfolder datafolder folderidx exportfolder
     
     currentfolder = fullfile(rootfolder, datafolder{folderidx});  %full path to folder
 %% Intializing Data
-data=zeros(1,15);
-daydata=zeros(1,15);
-nightdata=zeros(1,15);
-timedata=cell(0,0);
-td=cell(0,0);
-tn=cell(0,0);
-RemovedDay=NaT(1,1);
+data=NaN(0,15);
+daydata=NaN(0,15);
+nightdata=NaN(0,15);
+timedata=NaT(0);
+td=NaT(0);
+tn=NaT(0);
+RemovedDay=NaT(0);
 
 
 %% Building File Directory 
@@ -139,10 +139,7 @@ end
     
 %% Arrange Data, Find If Files have multiple months
 
-%Remove Zeros
-daydata=daydata(2:end,:);
-nightdata=nightdata(2:end,:);
-data=data(2:end,:);
+
 % Find Missing Minutes
 DateVector = datevec(timedata);
 DateVector(:,6)=0;
@@ -400,6 +397,15 @@ indexhours=find(hourschange);
  end
  
  
+  ih=size(rangehours,1); 
+ 
+ if rangehours(ih,1)==rangehours(ih,2)
+     
+     rangehours(ih-1,2)=rangehours(ih,2);
+     rangehours(ih,:)=[];
+ end
+ 
+ 
  
  %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 ih=size(rangehoursd,1);
@@ -443,6 +449,30 @@ hourlynightdata(i).NPI=(log10((sum(10.^(nightdata(a:b,18)./10)))/m))*10; %NPI
 hourlynightdata(i).From=tn(a);                                           %Dates
 hourlynightdata(i).To=tn(b);                                             %Dates
 end
+
+
+
+ih=size(rangehours,1);
+for i=1:ih
+    a=rangehours(i,1);
+    b=rangehours(i,2);
+    m=b-a;
+hourlydata(i).Max= max(data(a:b,2));                           %Max
+hourlydata(i).Min= min(data(a:b,3));                           %Min
+hourlydata(i).LEQ=(log10((sum(10.^(data(a:b,4)./10)))/m))*10;  %LEQ
+hourlydata(i).LNN=(log10((sum(10.^(data(a:b,5)./10)))/m))*10;  %LNN
+hourlydata(i).L5=(log10((sum(10.^(data(a:b,7)./10)))/m))*10;   %L5
+hourlydata(i).L10=(log10((sum(10.^(data(a:b,8)./10)))/m))*10;  %L10
+hourlydata(i).L50=(log10((sum(10.^(data(a:b,11)./10)))/m))*10; %L50
+hourlydata(i).L90=(log10((sum(10.^(data(a:b,13)./10)))/m))*10; %L90
+hourlydata(i).L95=(log10((sum(10.^(data(a:b,14)./10)))/m))*10; %L95         
+hourlydata(i).BGN=(log10((sum(10.^(data(a:b,16)./10)))/m))*10; %BGN
+hourlydata(i).EVT=(log10((sum(10.^(data(a:b,17)./10)))/m))*10; %EVT
+hourlydata(i).NPI=(log10((sum(10.^(data(a:b,18)./10)))/m))*10; %NPI
+hourlydata(i).From=timedata(a);                                           %Dates
+hourlydata(i).To=timedata(b);                                             %Dates
+end
+
 
 %% Daily
 
@@ -581,6 +611,7 @@ end
 %% Exporting Data into XLS format
 ExportHourDay=struct2table(hourlydaydata);
 ExportHourNight=struct2table(hourlynightdata);
+ExportHourData=struct2table(hourlydata);
 ExportDailyDay=struct2table(dailydaydata);
 ExportDailyNight=struct2table(dailynightdata);
 ExportMonthDay=struct2table(monthdaydata);
@@ -597,6 +628,7 @@ filename = sprintf('NMS%.0fData.xlsx',nms);
 
 writetable(ExportHourDay,filename,'Sheet','Hourly Day');
 writetable(ExportHourNight,filename,'Sheet','Hourly Night');
+writetable(ExportHourData,filename,'Sheet','Hourly Data');
 writetable(ExportDailyDay,filename,'Sheet','Daily Day');
 writetable(ExportDailyNight,filename,'Sheet','Daily Night');
 writetable(ExportMonthDay,filename,'Sheet','Monthly Day');
