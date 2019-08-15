@@ -1,6 +1,6 @@
 # Matlab SV200 Data Compiler
 
-These scripts are intended for Vibrocomp's use, to compile data from station generated CSV files.
+These scripts are intended for use, to compile data from station generated CSV files.
 
 ## Components
 
