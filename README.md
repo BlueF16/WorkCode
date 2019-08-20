@@ -8,7 +8,7 @@ These scripts are intended for use, to compile data from station generated CSV f
 
 * DataCompiler: Reads Excel sheets exported by "CSV Parser.m" and Exports one excel sheet that contains all the data in a neat format suitable to append to a report
 
-* DataPlotter: Read Excel sheets exported by "CSV Parser.m" and generates graphs to include in the reports. (Not Implemented yet)
+* GraphicsCreator: Read Excel sheets exported by "CSV Parser.m" and generates graphs to include in the reports. 
 
 ## Usage
 
