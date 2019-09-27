@@ -1,0 +1,125 @@
+clc
+clear all
+close all
+%%
+
+raw=readcell('F:\Metro report\Q 3\Data1second.xlsx','Sheet','MP9'); %Read from Excel
+DT= datetime(raw(6:end,2));
+
+data=cell2mat(raw(6:end,3:end));
+data(:,1:3)=data(:,1:3)*10^3;
+limit=10; %Define Limit
+[row,col] = find(data(:,1:3)>limit);
+Removed=[];
+while length(row)>0
+    Removed(end+1,:)=data(row(1),:);
+    data(row(1),:)=[];
+    DT(row(1))=[];
+    [row,col]=find(data(:,1:3)>limit);
+end
+
+
+
+%% Variables for each type of data
+aw= data(:,1:3);
+LASMax= data(:,4);
+LAeq =  data(:,5);
+
+
+%%PLot
+plot(DT,aw)
+xtickangle(90)
+legend('x','y','z')
+grid on
+
+clear data
+%% Find Metro Passes
+temp=[];
+range=[];
+for i=10908:length(aw)
+ 
+  if aw(i,2)<1
+      
+      if length(temp)<6
+          temp=[];
+          
+      else
+          range(end+1,1)= temp(1);
+          range(end,2)= temp(end);
+          range(end,3)= range(end,2)-range(end,1);
+          temp=[];
+          % add temp to Range
+      end
+      
+      continue
+  else
+      temp(end+1)=i;
+  end
+
+    
+end
+
+PassesData=zeros(length(LAeq),1);
+
+for i=1:length(range)
+    
+    PassesData(range(i,1):range(i,2))=aw(range(i,1):range(i,2));
+    
+end
+fig=figure('Position',[0.5 0.5 1648 2384]);
+
+plot(DT,PassesData);
+orient(fig,'landscape');
+print('Passes','-dpdf','-bestfit');
+clear col row i limit raw temp
+
+
+DTBckgndNoise=DT;
+LaeqBckgndNoise=LAeq;
+%% Find SEL for Each Pass and Average for all
+for i=1:length(range)
+temp= LAeq(range(i,1) : range(i,2));
+m=length(temp);
+range(i,6)= ((log10((sum(10.^(temp./10)))/m))*10); %Laeq
+range(i,4)=  ((log10((sum(10.^(temp./10)))/m))*10) + 10* log10(range(i,3)); %SELA
+temp=LASMax(range(i,1) : range(i,2)); 
+range(i,5)= max(temp);  %LASMax
+DTBckgndNoise(range(i,1) : range(i,2))=[];
+LaeqBckgndNoise(range(i,1) : range(i,2))=[];
+end
+
+DTPasses=DT(range(:,1:2));
+m=length(range(:,4));
+AverageSELA= ((log10((sum(10.^(range(:,4)./10)))/m))*10)
+%%  LASMAX Day and Night , and 95th Percentile
+
+LASMaxDay= max(range(find(hour(DTPasses(:,1))> 6 & hour(DTPasses(:,1))<20),5));
+temp=range(find(hour(DTPasses(:,1))< 7 | hour(DTPasses(:,1))>19),5);
+LASMaxNight= max(range(find(hour(DTPasses(:,1))< 7 | hour(DTPasses(:,1))>19),5));
+LASMaxDay95=prctile((range(find(hour(DTPasses(:,1))> 6 & hour(DTPasses(:,1))<20),5)),5);
+LASMaxNight95=prctile((range(find(hour(DTPasses(:,1))< 7 | hour(DTPasses(:,1))>19),5)),5);
+%% Metro Operation LAeq
+temp= range(find(hour(DTPasses(:,1))> 6 & hour(DTPasses(:,1))<20),6);
+m=length(temp);
+LAeqMetroDay= ((log10((sum(10.^(temp./10)))/m))*10);
+
+temp= range(find(hour(DTPasses(:,1))< 7 | hour(DTPasses(:,1))>19),6);
+m=length(temp);
+LAeqMetroNight= ((log10((sum(10.^(temp./10)))/m))*10);
+
+clear i m temp Removed
+%% Background Noise
+temp= LaeqBckgndNoise(find(hour(DTBckgndNoise(:,1))> 6 & hour(DTBckgndNoise(:,1))<20));
+m=length(temp);
+LAeqBckgndDay=prctile(temp,10) %((log10((sum(10.^(temp./10)))/m))*10);
+
+temp= LaeqBckgndNoise(find(hour(DTBckgndNoise(:,1))< 7 | hour(DTBckgndNoise(:,1))>19));
+m=length(temp);
+LAeqBckgndNight=prctile(temp,10)      %((log10((sum(10.^(temp./10)))/m))*10);
+
+
+
+%% Create Tables
+temp=round(linspace(1,length(range),24)); %Pick 24 passes
+SELTable=table( DT(range(temp,1)) ,DT(range(temp,2)), range(temp,3),range(temp,4),range(temp,5),'VariableNames',{'From','To','Duration','SEL','LASMax'});
+DayNightTable=table( [LASMaxDay;LASMaxNight],[LASMaxDay95;LASMaxNight95],[LAeqMetroDay;LAeqMetroNight],[LAeqBckgndDay;LAeqBckgndNight],'VariableNames',{'LASMax','L95 LASMax','LAeq Metro Operation','LAeq Background Noise'},'RowNames',{'Day','Night'});
